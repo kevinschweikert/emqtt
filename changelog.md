@@ -1,3 +1,10 @@
+# 1.13.8
+
+- Respect PINGRESP timeout.
+- Fix hanging connection when TLS alert happens during `mqtt_connect`.
+- Fix hanging connection when TLS disconnect happens during `mqtt_connect`.
+- Avoid hanging websocket connection caused by race condition.
+
 # 1.13.7
 
 - Fix a typo in MQTT v3 reason code.
