@@ -20,10 +20,8 @@
         , stop_emqx/0
         , ensure_test_module/1
         , ensure_listener/4
-        , ensure_quic_listener/2
         , is_tcp_server_available/2
         , all/1
-        , has_quic/0
         ]).
 
 %% TLS helpers
@@ -47,7 +45,7 @@ all(Suite) ->
 start_emqx() ->
     ensure_test_module(emqx_common_test_helpers),
     emqx_common_test_helpers:start_apps([]),
-    ok = ensure_quic_listener(mqtt, 14567),
+    ok.
     ok.
 
 -spec stop_emqx() -> ok.
@@ -73,18 +71,10 @@ compile_emqx_test_module(M) ->
     {ok, _} = compile:file(MFilename, [{outdir, OutDir}]),
     ok.
 
--spec ensure_quic_listener(atom(), inet:port_number()) -> ok.
-ensure_quic_listener(Name, BindPort) ->
-    case has_quic() of
-        true ->
-            ok = ensure_listener(quic, Name, {0, 0, 0, 0}, BindPort);
-        _ ->
-            ok
-    end.
+
 
 -spec ensure_listener(atom(), atom(), inet:ip_address(), inet:port_number()) -> ok.
 ensure_listener(Type, Name, BindAddr, BindPort) ->
-    Type =:= quic andalso application:ensure_all_started(quicer),
     BaseConf = #{
                  enable => true,
                  bind => {BindAddr, BindPort},
@@ -105,20 +95,7 @@ ensure_listener(Type, Name, BindAddr, BindPort) ->
         {error, {already_started, _Pid}} -> ok
     end.
 
-listener_conf(quic) ->
-    CertFile = filename:join(code:lib_dir(emqx), "etc/certs/cert.pem"),
-    KeyFile = filename:join(code:lib_dir(emqx), "etc/certs/key.pem"),
-    SslOpts = #{
-      certfile => CertFile,
-      ciphers =>
-      [
-       "TLS_AES_256_GCM_SHA384",
-       "TLS_AES_128_GCM_SHA256",
-       "TLS_CHACHA20_POLY1305_SHA256"
-      ],
-      keyfile => KeyFile
-     },
-    #{ssl_options => SslOpts};
+
 listener_conf(ws) ->
     #{
       websocket =>
@@ -228,5 +205,4 @@ set_ssl_options(ListenerId, Opts) ->
     emqx_config:put_listener_conf(Type, Name, [ssl_options], Opts),
     ok = emqx_listeners:restart_listener(ListenerId).
 
-has_quic() ->
-    false =:= os:getenv("BUILD_WITHOUT_QUIC").
+

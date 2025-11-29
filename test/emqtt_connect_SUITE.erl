@@ -32,13 +32,13 @@
 -define(PORTS, #{
                 {ip4, connect} =>      {1883,  []},
                 {ip4, ws_connect} =>   {8083,  []},
-                {ip4, quic_connect} => {14567, []},
+                
                 {ip6, connect} =>      {21883, [{tcp_opts, [{tcp_module, inet6_tcp}]}]},
                 {ip6, ws_connect} =>   {28083,
                                         [{ws_transport_options, [{protocols, [http]}, {tcp_opts, [inet6]}]},
                                          {ws_headers, [{<<"host">>, <<"[::1]:28083">>}]}
                                         ]},
-                {ip6, quic_connect} => {34567, []}
+                
                }).
 
 
@@ -50,14 +50,14 @@ connect_groups() ->
     [{group, tcp},
      {group, ws}
     ] ++
-    [{group, quic} || emqtt_test_lib:has_quic()].
+    
 
 groups() ->
     [{ip4, [], connect_groups()}] ++
     [{ip6, [], connect_groups()} || is_ip6_available()] ++
     [{tcp, [], [t_connect, t_reconnect]},
      {ws, [], [t_connect, t_reconnect]},
-     {quic, [], [t_connect, t_reconnect]}
+     
     ].
 
 suite() ->
@@ -75,19 +75,13 @@ init_per_group(ip4, Config) ->
 init_per_group(ip6, Config) ->
     ok = emqtt_test_lib:ensure_listener(tcp, mqtt_ip6, ?ALL_IF_IP6, 21883),
     ok = emqtt_test_lib:ensure_listener(ws, mqtt_ip6, ?ALL_IF_IP6, 28083),
-    case emqtt_test_lib:has_quic() of
-        true ->
-            ok = emqtt_test_lib:ensure_listener(quic, mqtt_ip6, ?ALL_IF_IP6, 34567);
-        false ->
-            ok
-    end,
+    
     [{ip_type, ip6}, {listener, mqtt_ip6} | Config];
 init_per_group(tcp, Config) ->
     [{conn_fun, connect}, {transport, tcp} | Config];
 init_per_group(ws, Config) ->
     [{conn_fun, ws_connect}, {transport, ws} | Config];
-init_per_group(quic, Config) ->
-    [{conn_fun, quic_connect}, {transport, quic}, {listener, mqtt} | Config].
+
 
 end_per_group(_, Config) ->
     Config.
